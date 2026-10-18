@@ -3,6 +3,7 @@ import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { Adb, resolveAdb, shellQuote } from "./adb";
 import { DeviceController } from "./controller";
 import { MirrorSession } from "./scrcpy/session";
@@ -57,6 +58,9 @@ interface Mirror {
   serial: string;
   kind: "android" | "ios";
   window: BrowserWindow;
+  controlsWindow?: BrowserWindow;
+  controlsWidth?: number;
+  placeControls?: () => void;
   session?: MirrorSession;
   controller?: DeviceController;
   logcat?: LogcatStream;
@@ -107,6 +111,52 @@ function send(wc: WebContents, channel: string, ...args: unknown[]) {
   if (!wc.isDestroyed()) wc.send(channel, ...args);
 }
 
+// The phone window itself is the capture target. Controls live in an attached
+// native window, so window capture never includes the toolbar or side panels.
+function attachControls(m: Mirror) {
+  const controlsUrl = pathToFileURL(path.join(rendererDir, "controls.html")).href;
+  m.controlsWidth = 52;
+  let placing = false;
+  let onLeft = false;
+  const place = () => {
+    const controls = m.controlsWindow;
+    if (!controls || controls.isDestroyed() || m.window.isDestroyed()) return;
+    const b = m.window.getBounds();
+    const area = screen.getDisplayMatching(b).workArea;
+    const width = m.controlsWidth ?? 52;
+    onLeft = b.x + b.width + width > area.x + area.width;
+    placing = true;
+    controls.setBounds({ x: onLeft ? b.x - width : b.x + b.width, y: b.y, width, height: b.height });
+    placing = false;
+  };
+  m.placeControls = place;
+  m.window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url !== controlsUrl || (m.controlsWindow && !m.controlsWindow.isDestroyed())) return { action: "deny" };
+    return { action: "allow", overrideBrowserWindowOptions: {
+      parent: m.window, frame: false, skipTaskbar: true, resizable: false,
+      width: 52, height: m.window.getBounds().height, backgroundColor: "#12151a",
+      webPreferences: { nodeIntegration: false, contextIsolation: true, backgroundThrottling: false },
+    } };
+  });
+  m.window.webContents.on("did-create-window", (controls) => {
+    m.controlsWindow = controls;
+    controls.setMenu(null);
+    controls.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    controls.webContents.on("will-navigate", (e, url) => { if (url !== controlsUrl) e.preventDefault(); });
+    controls.on("move", () => {
+      if (placing || m.window.isDestroyed()) return;
+      const b = m.window.getBounds();
+      const c = controls.getBounds();
+      const x = onLeft ? c.x + c.width : c.x - b.width;
+      if (b.x !== x || b.y !== c.y) m.window.setPosition(x, c.y);
+    });
+    controls.on("closed", () => { m.controlsWindow = undefined; if (!m.window.isDestroyed()) m.window.close(); });
+    place();
+  });
+  m.window.on("move", place);
+  m.window.on("resize", place);
+}
+
 function openMirror(serial: string): Mirror {
   const existing = mirrors.get(serial);
   if (existing && !existing.window.isDestroyed()) {
@@ -119,6 +169,7 @@ function openMirror(serial: string): Mirror {
   const win = new BrowserWindow({
     width: Math.round(h * 0.5) + 56,
     height: h,
+    frame: false,
     minWidth: 260,
     minHeight: 320,
     title: `Mirrorlab — ${serial}`,
@@ -137,6 +188,7 @@ function openMirror(serial: string): Mirror {
     evidenceMode: false,
   };
   mirrors.set(serial, m);
+  attachControls(m);
   void win.loadFile(path.join(rendererDir, "mirror.html"), { query: { serial, kind: "android" } });
   win.on("focus", () => void syncClipboardToDevice(m));
   win.on("closed", () => {
@@ -213,6 +265,7 @@ function onAirplayDevice(r: AirplayReceiver | NativeAirplayReceiver | UsbIphoneS
   const win = new BrowserWindow({
     width: Math.round(h * 0.5) + 56,
     height: h,
+    frame: false,
     minWidth: 260,
     minHeight: 320,
     title: `${device.name} — Mirrorlab`,
@@ -233,6 +286,7 @@ function onAirplayDevice(r: AirplayReceiver | NativeAirplayReceiver | UsbIphoneS
     pendingVideoBytes: 0,
   };
   mirrors.set(serial, m);
+  attachControls(m);
   const mm = m;
   void win.loadFile(path.join(rendererDir, "mirror.html"), { query: { serial, kind: "ios", name: device.name } });
   win.on("closed", () => {
@@ -571,6 +625,10 @@ function registerIpc() {
     const m = mirrorFor(e);
     const c = m.controller;
     switch (action) {
+      case "windowClose":
+        return m.window.close();
+      case "windowMinimize":
+        return m.window.minimize();
       case "reconnect":
         if (m.kind === "ios") return restartReceiver();
         return startSession(m);
@@ -652,19 +710,23 @@ function registerIpc() {
       case "agentInfo":
         return agentInfo();
       case "fitWindow": {
-        // Size the window to the phone's aspect at the current height, plus toolbar/panel.
+        // Keep the capture window at phone aspect; size its attached controls separately.
         const { videoW, videoH, extra } = arg as { videoW: number; videoH: number; extra: number };
         const win = m.window;
+        m.controlsWidth = extra;
+        m.placeControls?.();
         if (win.isFullScreen() || win.isMaximized()) return;
         const [, h] = win.getContentSize();
         const area = screen.getDisplayMatching(win.getBounds()).workArea;
         let height = Math.min(h!, area.height);
-        let width = Math.round((height * videoW) / videoH) + extra;
+        let width = Math.round((height * videoW) / videoH);
         if (width > area.width) {
           width = area.width;
-          height = Math.round(((width - extra) * videoH) / videoW);
+          height = Math.round((width * videoH) / videoW);
         }
         win.setContentSize(width, height);
+        // Also repositions controls after a panel opens without a phone resize.
+        m.placeControls?.();
         const b = win.getBounds();
         if (b.x + b.width > area.x + area.width) win.setPosition(Math.max(area.x, area.x + area.width - b.width), b.y);
         return;

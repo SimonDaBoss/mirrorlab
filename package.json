@@ -1,6 +1,6 @@
 {
   "name": "mirrorlab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Android and iPhone screen mirroring with audio, recording, AI-agent control and inspection tools.",
   "main": "dist/main/main.js",
   "type": "commonjs",

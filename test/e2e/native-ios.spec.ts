@@ -1,3 +1,4 @@
+import { controlsFor } from "./controls";
 import { _electron as electron, expect, test, type ElectronApplication } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
@@ -28,15 +29,16 @@ test("native iPhone pairing, encrypted video and AAC-ELD audio reach the mirror,
     const streaming = phone.stream();
     const mirror = await nextWindow;
     await mirror.waitForFunction(() => (window as any).__mirrorlab?.connected === true);
+    const controls = await controlsFor(mirror);
     await phone.streamAudio();
     await streaming;
     await mirror.waitForFunction(() => (window as any).__mirrorlab.video.stats.decoded > 10 && (window as any).__mirrorlab.audio?.played > 10);
-    await expect(mirror.locator('[data-t="back"]')).toHaveCount(0);
-    await expect(mirror.locator('[data-t="mute"]')).toBeVisible();
-    await mirror.locator('[data-t="shot"]').click();
-    await expect(mirror.locator("#toast")).toContainText("Saved and copied");
-    await mirror.locator('[data-t="rec"]').click();
-    await expect(mirror.locator('[data-t="rec"]')).toHaveClass(/rec/);
+    await expect(controls.locator('[data-t="back"]')).toHaveCount(0);
+    await expect(controls.locator('[data-t="mute"]')).toBeVisible();
+    await controls.locator('[data-t="shot"]').click();
+    await expect(controls.locator("#toast")).toContainText("Saved and copied");
+    await controls.locator('[data-t="rec"]').click();
+    await expect(controls.locator('[data-t="rec"]')).toHaveClass(/rec/);
     // Exercise real encrypted transport + native decryption + WebCodecs at 60 fps.
     const before = await mirror.evaluate(() => ({ ...(window as any).__mirrorlab.video.stats }));
     await phone.stream(240, 60);
@@ -52,9 +54,9 @@ test("native iPhone pairing, encrypted video and AAC-ELD audio reach the mirror,
     expect(recovered.fps).toBeGreaterThanOrEqual(55);
     fs.mkdirSync(path.join(root, "test/screenshots"), { recursive: true });
     fs.writeFileSync(path.join(root, "test/screenshots/native-60fps.json"), JSON.stringify({ paced, recovered }, null, 2));
-    await mirror.locator('[data-t="rec"]').click();
-    await expect(mirror.locator("#toast")).toContainText("Recording saved", { timeout: 10000 });
-    const recording = (await mirror.locator("#toast").innerText()).replace("Recording saved: ", "");
+    await controls.locator('[data-t="rec"]').click();
+    await expect(controls.locator("#toast")).toContainText("Recording saved", { timeout: 10000 });
+    const recording = (await controls.locator("#toast").innerText()).replace("Recording saved: ", "");
     const videoDir = await app.evaluate(({ app }) => app.getPath("videos"));
     expect(fs.statSync(path.join(videoDir, "Mirrorlab", recording)).size).toBeGreaterThan(5000);
     await mirror.screenshot({ path: path.join(root, "test/screenshots/native-ios-mirror.png") });
@@ -66,7 +68,7 @@ test("native iPhone pairing, encrypted video and AAC-ELD audio reach the mirror,
     await phone.stream();
     await mirror.waitForFunction(() => (window as any).__mirrorlab.connected === true);
     await expect(mirror.locator("#status")).toBeHidden();
-    expect(app.windows()).toHaveLength(2);
+    expect(app.context().pages()).toHaveLength(3);
     phone.close();
     await expect(mirror.locator("#status")).toContainText("Disconnected");
     await mirror.close();

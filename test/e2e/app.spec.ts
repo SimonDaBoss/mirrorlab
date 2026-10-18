@@ -1,3 +1,4 @@
+import { controlsFor } from "./controls";
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -81,6 +82,7 @@ test("launcher lists the device, mirror decodes video and forwards input, agent 
   expect(audio.active).toBe(true);
   expect(audio.played).toBeGreaterThan(10);
   await expect(mirror).toHaveTitle(/Fake Pixel/);
+  const controls = await controlsFor(mirror);
 
   // Mouse click → INJECT_TOUCH_EVENT down+up (type 2, 32 bytes each), mapped to video coordinates.
   const before = controlBytes().length;
@@ -107,11 +109,11 @@ test("launcher lists the device, mirror decodes video and forwards input, agent 
   expect(typed.includes(Buffer.from([0, 0, 0, 0, 0, 66]))).toBe(true); // ENTER down
 
   // Inspector panel captures the UI tree; bounds scale from 736x1280 display to 368x640 video.
-  await mirror.locator('[data-t="inspector"]').click();
-  await mirror.locator("#cap").click();
-  await expect(mirror.locator(".tree")).toContainText("Buy milk");
-  await mirror.locator(".tree div", { hasText: "fab_add" }).click();
-  await expect(mirror.locator(".props")).toContainText("280, 560, 352, 632");
+  await controls.locator('[data-t="inspector"]').click();
+  await controls.locator("#cap").click();
+  await expect(controls.locator(".tree")).toContainText("Buy milk");
+  await controls.locator(".tree div", { hasText: "fab_add" }).click();
+  await expect(controls.locator(".props")).toContainText("280, 560, 352, 632");
   await mirror.screenshot({ path: path.join(shots, "mirror-inspector.png") });
 
   // --- the agent, through a real MCP client over HTTP
@@ -160,24 +162,24 @@ test("launcher lists the device, mirror decodes video and forwards input, agent 
   expect(r401.status).toBe(401);
 
   // Timeline shows user and agent events.
-  await mirror.locator('[data-t="timeline"]').click();
-  await expect(mirror.locator("#events")).toContainText("FAB opens the editor");
-  await expect(mirror.locator(".event.user").first()).toBeVisible();
-  await expect(mirror.locator(".event.agent").first()).toBeVisible();
+  await controls.locator('[data-t="timeline"]').click();
+  await expect(controls.locator("#events")).toContainText("FAB opens the editor");
+  await expect(controls.locator(".event.user").first()).toBeVisible();
+  await expect(controls.locator(".event.agent").first()).toBeVisible();
   await mirror.screenshot({ path: path.join(shots, "mirror-timeline.png") });
 
   // Clipboard from the "phone" reached the PC (before the screenshot replaces it with an image).
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe("copied on phone");
 
   // Screenshot button saves a PNG and copies it; record button produces a non-empty video file.
-  await mirror.locator('[data-t="shot"]').click();
-  await expect(mirror.locator("#toast")).toContainText("Saved and copied");
+  await controls.locator('[data-t="shot"]').click();
+  await expect(controls.locator("#toast")).toContainText("Saved and copied");
   expect(await app.evaluate(async ({ clipboard }) => (await clipboard.read())[0]?.types ?? [])).toContain("image/png");
-  await mirror.locator('[data-t="rec"]').click();
-  await expect(mirror.locator('[data-t="rec"]')).toHaveClass(/rec/);
+  await controls.locator('[data-t="rec"]').click();
+  await expect(controls.locator('[data-t="rec"]')).toHaveClass(/rec/);
   await mirror.waitForTimeout(2500);
-  await mirror.locator('[data-t="rec"]').click();
-  await expect(mirror.locator("#toast")).toContainText("Recording saved", { timeout: 10_000 });
+  await controls.locator('[data-t="rec"]').click();
+  await expect(controls.locator("#toast")).toContainText("Recording saved", { timeout: 10_000 });
   const recFile = await app.evaluate(({ app }) => app.getPath("videos"));
   const vids = fs.readdirSync(path.join(recFile, "Mirrorlab")).map((f) => fs.statSync(path.join(recFile, "Mirrorlab", f)).size);
   expect(Math.max(...vids)).toBeGreaterThan(20_000);

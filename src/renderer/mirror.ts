@@ -24,7 +24,9 @@ declare global {
   }
 }
 const api = window.mirrorlab;
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+let controlsWindow: Window | null = null;
+const find = (id: string) => document.getElementById(id) ?? controlsWindow?.document.getElementById(id);
+const $ = <T extends HTMLElement>(id: string) => find(id) as T;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 // iOS mirrors are view-only (AirPlay is one-way): no control, no adb-backed panels.
@@ -43,6 +45,31 @@ const toolbar = $("toolbar");
 const panel = $("panel");
 const toastEl = $("toast");
 const agentChip = $("agentChip");
+
+function openControls() {
+  controlsWindow = window.open("controls.html", "mirrorlab-controls");
+  const controls = controlsWindow;
+  if (!controls) return;
+  controls.addEventListener("DOMContentLoaded", () => {
+    controls.document.title = `${document.title} — Controls`;
+    const header = controls.document.createElement("header");
+    header.className = "window-tools";
+    header.innerHTML = '<div class="window-grip" title="Drag to move mirror">⠿</div><button title="Minimize mirror" aria-label="Minimize mirror">−</button><button title="Close mirror" aria-label="Close mirror">×</button>';
+    header.querySelectorAll("button")[0]!.onclick = () => void api.invoke("mirror:action", "windowMinimize");
+    header.querySelectorAll("button")[1]!.onclick = () => void api.invoke("mirror:action", "windowClose");
+    const content = controls.document.createElement("div");
+    content.className = "control-content";
+    content.append(toolbar, panel);
+    controls.document.body.append(header, content, toastEl);
+    controls.addEventListener("keydown", (e) => {
+      if (e.altKey && !e.ctrlKey && shortcuts[e.code]) {
+        e.preventDefault();
+        if (!e.repeat) shortcuts[e.code]!();
+      }
+    });
+    fitWindow();
+  }, { once: true });
+}
 
 const video = new VideoPipeline(canvas, () => api.control(encodeSimple(ControlType.RESET_VIDEO)), readOnly);
 let audio: AudioPipeline | undefined;
@@ -63,7 +90,7 @@ const TOOLBAR_W = 52;
 const PANEL_W = 380;
 function fitWindow() {
   const s = video.size;
-  if (!s || document.fullscreenElement) return;
+  if (!s) return;
   void api.invoke("mirror:action", "fitWindow", { videoW: s.width, videoH: s.height, extra: TOOLBAR_W + (openPanel ? PANEL_W : 0) });
 }
 video.onResize = () => {
@@ -95,6 +122,7 @@ api.on("mirror:info", (info) => {
   const i = info as { deviceName: string; timelineDir: string };
   deviceName = i.deviceName || deviceName;
   document.title = `${deviceName} — Mirrorlab`;
+  if (controlsWindow && !controlsWindow.closed) controlsWindow.document.title = `${document.title} — Controls`;
   statusText.textContent = readOnly ? "Waiting for your iPhone…" : "Waiting for the first frame…";
 });
 
@@ -680,7 +708,7 @@ async function renderLogcat() {
 
 api.on("mirror:logcat", (lines) => {
   if (openPanel !== "logcat" || logPaused) return;
-  const log = document.getElementById("log");
+  const log = find("log");
   if (!log) return;
   const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
   log.insertAdjacentHTML("beforeend", (lines as LogLine[]).filter(logPasses).map(logRow).join(""));
@@ -719,7 +747,7 @@ async function renderTimeline() {
   };
 }
 api.on("mirror:timeline", (e) => {
-  const list = document.getElementById("events");
+  const list = find("events");
   if (openPanel === "timeline" && list) list.insertAdjacentHTML("afterbegin", eventRow(e as TimelineEntry));
 });
 
@@ -776,6 +804,7 @@ void api.invoke("settings:get").then((s) => {
   renderToolbar();
 });
 renderToolbar();
+openControls();
 if (readOnly) {
   ime.disabled = true;
   statusText.textContent = "Waiting for your iPhone…";

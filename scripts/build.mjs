@@ -10,5 +10,5 @@ await Promise.all([
   build({ ...common, entryPoints: ["src/renderer/mirror.ts", "src/renderer/launcher.ts"], outdir: "dist/renderer", platform: "browser", format: "iife" }),
 ]);
 mkdirSync("dist/renderer", { recursive: true });
-for (const f of ["index.html", "mirror.html", "style.css"]) cpSync(`src/renderer/${f}`, `dist/renderer/${f}`);
+for (const f of ["index.html", "mirror.html", "controls.html", "style.css"]) cpSync(`src/renderer/${f}`, `dist/renderer/${f}`);
 console.log("built dist/");

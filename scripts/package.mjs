@@ -26,7 +26,7 @@ const paths = await packager({
   asar: true,
   prune: true,
   extraResource,
-  ignore: [/^\/src/, /^\/test/, /^\/out/, /^\/work/, /^\/scripts/, /^\/resources/, /\.gitbundle$/, /\.map$/, /^\/playwright\.config/, /^\/vitest\.config/, /^\/tsconfig/],
+  ignore: [/^\/src/, /^\/test/, /^\/out/, /^\/release/, /^\/work/, /^\/scripts/, /^\/resources/, /\.gitbundle$/, /\.map$/, /^\/playwright\.config/, /^\/vitest\.config/, /^\/tsconfig/],
   appCopyright: "Mirrorlab contributors. Includes scrcpy (Apache-2.0, Genymobile) and Android adb (Apache-2.0, AOSP).",
 });
 console.log("packaged:", paths.join(", "));

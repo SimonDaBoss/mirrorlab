@@ -12,6 +12,18 @@ Two engines, one app:
 
 Video decodes through WebCodecs (GPU-accelerated where available). iPhone audio is decoded by GStreamer and played through Web Audio, including in recordings.
 
+## Discord / OBS streaming
+
+Window capture is clean by default. The phone display is one borderless window; the controls sit in an attached strip beside it. You see one mirror with its controls. Sharing the phone window excludes the strip, side panels, and app notifications, without opening a second video window or enabling a streaming mode.
+
+- **Discord:** Share Your Screen → Applications → choose the phone's **Mirrorlab** window.
+- **OBS:** add a **Window Capture** source and select the phone's **Mirrorlab** window. Disable **Capture Cursor** if you do not want your mouse in the stream. Set OBS output to 60 fps if desired; actual phone frame rate still varies.
+- Select the phone window rather than **Mirrorlab Controls**, the launcher, or your entire display. Keep the phone window open and restored while capturing.
+- Phone sound continues through Mirrorlab once, without duplicate playback. In OBS, enable audio capture on the window source where available, or add an **Application Audio Capture** source for Mirrorlab. Avoid capturing the same audio again through Desktop Audio.
+- Drag the grip above the controls to move both together. The small minimize and close buttons apply to the mirror. Resizing the phone or rotating it keeps the controls attached.
+
+See the [OBS window capture guide](https://obsproject.com/kb/window-capture-sources), [OBS application audio guide](https://obsproject.com/kb/application-audio-capture-guide), and [Discord screen sharing guide](https://support.discord.com/hc/en-us/articles/360040816151-Go-Live-and-Screen-Share).
+
 ## iPhone / iPad (AirPlay)
 
 1. Turn on **Receive AirPlay** in Mirrorlab (on by default) — it advertises your PC on the network.

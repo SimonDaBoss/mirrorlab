@@ -1,3 +1,4 @@
+import { controlsFor } from "./controls";
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
 import net from "node:net";
 import fs from "node:fs";
@@ -119,20 +120,20 @@ test("an iPhone (AirPlay) mirrors into a view-only window and the stream decodes
     null,
     { timeout: 8000 },
   );
+  const controls = await controlsFor(mirror);
+  const tools = await controls.locator("[data-t]").evaluateAll(elements => elements.map(e => (e as HTMLElement).dataset.t));
   const info = await mirror.evaluate(() => ({
     size: (window as any).__mirrorlab.video.size,
-    // Read-only window: the control toolbar must NOT offer Back/Home.
-    tools: [...document.querySelectorAll("[data-t]")].map((e) => (e as HTMLElement).dataset.t),
   }));
   expect(info.size).toEqual({ width: 368, height: 640 });
   expect(await mirror.evaluate(() => {
     const c = document.getElementById("canvas") as HTMLCanvasElement;
     return c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 !== 3 && v > 60);
   })).toBe(true);
-  expect(info.tools).not.toContain("back");
-  expect(info.tools).not.toContain("inspector");
-  expect(info.tools).toContain("shot");
-  expect(info.tools).toContain("rec");
+  expect(tools).not.toContain("back");
+  expect(tools).not.toContain("inspector");
+  expect(tools).toContain("shot");
+  expect(tools).toContain("rec");
 
   const shotDir = path.join(root, "test", "screenshots");
   fs.mkdirSync(shotDir, { recursive: true });
