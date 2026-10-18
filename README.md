@@ -1,5 +1,6 @@
 # Mirrorlab
 
+**An ApowerMirror free alternative**
 **Windows 10/11 x64.** [Download the portable app](https://github.com/SimonDaBoss/mirrorlab/releases/latest) · [Setup and troubleshooting](docs/SUPPORT.md)
 
 Download the Windows ZIP from Releases, extract the whole folder, and open **Mirrorlab.exe**. No Node.js installation is needed for the portable download. Android needs USB debugging; iPhone USB needs Apple's USB driver and the app's optional per-device setup; AirPlay needs Bonjour. Other operating systems are not currently packaged.
@@ -103,14 +104,6 @@ The ApowerMirror column comes from third-party reviews (one by a competitor, Air
 | Alt+F | Fullscreen |
 | F12 | Stream stats |
 
-## Reverse-engineering extras
-
-* **Inspector**: captures the accessibility tree. Turn on pick mode, hover the mirror to see element bounds, and click to get class, text, resource ID and content description, each with a copy button.
-* **Logcat**: a live device log with tag/text/PID filter and level filter.
-* **Timeline**: records every input (yours and the agent's), notes, and screenshots, saved continuously to `Documents\Mirrorlab\Timelines\`. *Evidence mode* adds a screenshot after each of your taps, and *Export report* writes one self-contained HTML file you can share.
-
-For deeper work (decompiling the APK, Frida hooks, network captures), run [REA](https://github.com/morluto/rea) next to Mirrorlab. Both are MCP servers, so one agent can drive the app through Mirrorlab while it inspects the code with REA, and leave notes on the same timeline.
-
 ## AI agent (MCP)
 
 Mirrorlab listens on `http://127.0.0.1:47800/mcp` (localhost only, bearer token, Host-header check). Copy the setup command from the main window. For Claude Code:
@@ -122,27 +115,6 @@ claude mcp add --transport http mirrorlab http://127.0.0.1:47800/mcp --header "A
 Tools: `list_devices`, `screenshot`, `tap`, `swipe`, `type_text`, `press_key`, `ui_tree`, `tap_element`, `launch_app`, `list_packages`, `logcat`, `timeline`.
 
 The agent can only act on a device whose mirror window is open, and every action flashes purple on the mirror and lands on the timeline. Coordinates are in screenshot pixels (longest edge ≤ 1280).
-
-## Develop
-
-```
-npm install
-npm run build:airplay # Windows x64 native receiver; only needed if rebuilding native components
-npm run build:usb     # Windows x64 QuickTime USB helper and libusb0 capture driver payload
-npm start            # build + run
-npm test             # unit + fake-device integration tests
-npm run test:e2e     # full app under Playwright (Linux needs xvfb-run)
-```
-
-`test/fake-adb.mjs` emulates adb plus the scrcpy server. It streams real H.264 video and Opus audio, records every control byte, and serves a UI dump, so the whole app can be tested without a phone. Point the app at it with `MIRRORLAB_ADB=test/fake-adb.mjs`. To use a different real adb, set `MIRRORLAB_ADB` to its path.
-
-```
-src/shared/protocol.ts     scrcpy v5 wire protocol (control, device messages, media demuxer)
-src/main/scrcpy/session.ts push server → adb forward → sockets → demux
-src/main/controller.ts     tap/swipe/type/keys over the control socket
-src/main/extras/           inspector, logcat, timeline, MCP agent endpoint
-src/renderer/              launcher, mirror window, WebCodecs video/audio
-```
 
 ## License
 
