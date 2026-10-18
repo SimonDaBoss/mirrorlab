@@ -1,0 +1,4 @@
+Independent GPL-3.0-or-later USB host. iPhoneMirror source: https://github.com/RayrenSX/iPhoneMirror at 31acd8a78e7038d46c7e1a6ee987b9035cf36dde.
+Unmodified upstream source, including licenses, is in iphonemirror-source.tar.gz; all upstream units, including iPhoneMirror.UsbConfigurationSwitch.exe, are compiled unmodified. Build from the Mirrorlab project: npm run build:usb.
+Capture uses the libusb-win32 1.2.6.0 per-device UpperFilter (libusb0.sys, install-filter.exe, libusb0.dll; LGPL, from iPhoneMirror's DriverInstaller/Assets, source zip included there). It is installed for one iPhone only when the user chooses Set up USB, via usb-driver.ps1, which verifies the pinned hashes. Apple's USB driver and usbccgp are not replaced.
+Compiler runtime source recipes and licenses accompany resources/airplay/source.

@@ -1,0 +1,43 @@
+Mirrorlab
+Copyright (C) 2026 Simon Lamichhane and Mirrorlab contributors
+
+This product bundles third-party software:
+
+- scrcpy-server v5.0.1 (resources/scrcpy-server)
+  Copyright (C) 2018 Genymobile, Copyright (C) 2018-2026 Romain Vimont
+  Apache License 2.0 — see resources/SCRCPY-LICENSE.txt
+  https://github.com/Genymobile/scrcpy
+  SHA-256 764eb6f79811d5211fe9df341120882ba9994c7a61b897d7bf3fb662e53bc536 (matches the upstream release)
+
+- Android Debug Bridge (resources/adb/win32: adb.exe, AdbWinApi.dll, AdbWinUsbApi.dll)
+  The Android Open Source Project, Apache License 2.0
+  Taken unmodified from the scrcpy-win64-v5.0.1 release
+  (SHA-256 b12a2c4ee8be317422451fc7dcf8ee20a71b5ea7ef9ad73ddd825a25316227a5).
+
+The scrcpy wire protocol implemented in src/shared/protocol.ts follows the
+byte layouts in scrcpy's app/src/control_msg.c, device_msg.c and demuxer.c.
+
+- UxPlay v1.73.7, commit df67c212a433cf6dda3676dd40c097900d24e645
+  https://github.com/FDH2/UxPlay — GPL-3.0-or-later
+  Separate receiver executable under resources/airplay/win32, communicating
+  with Mirrorlab through framed loopback TCP and RTP audio. Native source, local changes,
+  license and build information: resources/airplay/source/.
+  Includes PlayFair, llhttp and the upstream AirPlay implementation with
+  their original copyright and license notices preserved in the source.
+
+- GStreamer, FFmpeg, OpenSSL, libplist, Bonjour client and runtime libraries
+  Unmodified MSYS2 UCRT64 libraries and the open-source uxplay-windows Bonjour
+  client. Exact package versions, licenses and source locations are recorded
+  in resources/airplay/source/. They are used only by the separate receiver.
+
+- iPhoneMirror USB protocol/transport, commit 31acd8a78e7038d46c7e1a6ee987b9035cf36dde
+  https://github.com/RayrenSX/iPhoneMirror — GPL-3.0-or-later
+  Separate native iphone-usb.exe and iPhoneMirror.UsbConfigurationSwitch.exe under
+  resources/usb/win32. Unmodified pinned upstream sources, Mirrorlab's helper sources and build script accompany it
+  in resources/usb/source/. libusb and libusb-win32 retain upstream licenses.
+  No proprietary ApowerMirror DLL is redistributed or loaded by Mirrorlab.
+
+- libusb-win32 1.2.6.0 (libusb0.sys, libusb0.dll, install-filter.exe), LGPL-3.0
+  https://sourceforge.net/projects/libusb-win32 — unmodified signed binaries from
+  iPhoneMirror's DriverInstaller/Assets; licenses in resources/usb/source/libusb-win32/
+  and source in the bundled iPhoneMirror archive. Installed per device only on request.

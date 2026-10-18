@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Mirrorlab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="launcher">
+  <main>
+    <div class="brand" id="brand"></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <h2 style="font-size:14px">Devices</h2>
+      <span class="muted" id="scan">Scanning…</span>
+    </div>
+    <div class="devices" id="devices"></div>
+    <div class="empty" id="empty" hidden>
+      <h2 style="font-size:15px">Connect your Android phone</h2>
+      <ol>
+        <li>On the phone: Settings → About phone → tap <b>Build number</b> seven times.</li>
+        <li>Settings → System → Developer options → turn on <b>USB debugging</b>.</li>
+        <li>Plug it in with a data cable and accept the <b>Allow USB debugging</b> prompt.</li>
+        <li>No cable? Use <b>Wireless debugging</b> (Android 11+) and pair from the right.</li>
+        <li>Emulator (LDPlayer, BlueStacks)? Enable its ADB setting, then connect to <code>127.0.0.1:5555</code>.</li>
+      </ol>
+    </div>
+  </main>
+  <aside>
+    <section class="card">
+      <h2>Wireless</h2>
+      <div class="stack">
+        <div class="field"><label for="host">Connect to IP:port</label>
+          <div class="row"><input type="text" id="host" placeholder="192.168.1.50:5555"><button class="btn" id="connect">Connect</button></div></div>
+        <details>
+          <summary class="muted" style="cursor:pointer">Pair with a code (Android 11+)</summary>
+          <div class="stack" style="margin-top:8px">
+            <p class="muted" style="margin:0">Phone: Developer options → Wireless debugging → <b>Pair device with pairing code</b>.</p>
+            <div class="row"><input type="text" id="pairHost" placeholder="IP:pairing port"><input type="text" id="pairCode" placeholder="Code" style="max-width:90px"></div>
+            <button class="btn" id="pair">Pair</button>
+          </div>
+        </details>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Quality</h2>
+      <div class="presets" id="presets"></div>
+      <div id="toggles" style="margin-top:8px"></div>
+    </section>
+    <section class="card">
+      <h2>iPhone / iPad <span class="badge" id="iosBadge">…</span></h2>
+      <div id="ios" class="stack"></div>
+    </section>
+    <section class="card">
+      <h2>AI agent <span class="badge" id="agentBadge">…</span></h2>
+      <div id="agent" class="stack"></div>
+    </section>
+    <section class="card">
+      <h2>Health check</h2>
+      <div id="doctor" class="stack muted">Checking…</div>
+    </section>
+  </aside>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="launcher.js"></script>
+</body>
+</html>

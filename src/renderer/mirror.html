@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: file:; media-src blob:; style-src 'self' 'unsafe-inline'">
+<title>Mirrorlab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="mirror">
+  <div class="stage" id="stage">
+    <div class="screen" id="screen">
+      <canvas id="canvas" width="360" height="640" tabindex="-1"></canvas>
+      <div class="overlay" id="overlay"></div>
+      <div class="agent-chip" id="agentChip">Agent</div>
+    </div>
+    <div class="status" id="status"><div class="spinner"></div><div id="statusText">Starting on device…</div></div>
+    <div class="stats" id="stats" hidden></div>
+    <div class="drop" id="drop" hidden>Drop to send — APKs are installed, other files go to Download/</div>
+    <textarea class="ime" id="ime" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  </div>
+  <nav class="toolbar" id="toolbar"></nav>
+  <section class="panel" id="panel" hidden></section>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="mirror.js"></script>
+</body>
+</html>
