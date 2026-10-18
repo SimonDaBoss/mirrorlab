@@ -54,9 +54,11 @@ describe("MirrorSession against the fake device", () => {
       buttons: 1,
     });
     expect(session.send(tap)).toBe(true);
-    await new Promise((r) => setTimeout(r, 200));
-    const received = readFileSync(path.join(state, "control.bin"));
-    expect(Buffer.compare(received, Buffer.from(tap))).toBe(0);
+    // TCP delivery and the fake device's file write can take longer on CI.
+    await expect.poll(() => {
+      const file = path.join(state, "control.bin");
+      return existsSync(file) ? [...readFileSync(file)] : [];
+    }, { timeout: 5000 }).toEqual([...tap]);
 
     const shellLog = readFileSync(path.join(state, "shell.log"), "utf8");
     expect(shellLog).toMatch(/CLASSPATH=\/data\/local\/tmp\/scrcpy-server.jar app_process \/ com.genymobile.scrcpy.Server 5.0.1 scid=[0-9a-f]{8}/);
